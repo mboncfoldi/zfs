@@ -1,13 +1,13 @@
-'# Steps to install Kubuntu 22.04 desktop on zfs
+# Steps to install Kubuntu 22.04 desktop on zfs
 
 no bpool or boot partition - only rpool +compression,encryption
 no grub - systemd-boot
 
 Start live iso --> terminal
 
-sudo -i
+*sudo -i
 
-add-apt-repository multiverse
+*add-apt-repository multiverse
 apt update
 apt install debootstrap arch-install-scripts zfs-initramfs gdisk
 systemctl stop zed
@@ -68,8 +68,8 @@ blkid
 nano /etc/kernel/postinst.d/zz-update-systemd-boot-zfs
 
 #!/bin/bash
-# This is a simple kernel hook to populate the systemd-boot entries
-# whenever kernels are added or removed.
+*# This is a simple kernel hook to populate the systemd-boot entries
+*# whenever kernels are added or removed.
 
 #ZFSROOT="CHANGEME E.G. data/dpool/buster"
 #UUID="CHANGEME"
@@ -93,7 +93,7 @@ while IFS= read -r -u3 -d $'\0' LINE; do
 	KERNELS+=("${KERNEL:8}")
 done 3< <(eval "${FIND}")
 
-# There has to be at least one kernel.
+*# There has to be at least one kernel.
 if [ ${#KERNELS[@]} -lt 1 ]; then
 	echo -e "\e[2msystemd-boot\e[0m \e[1;31mNo kernels found.\e[0m"
 	exit 1
