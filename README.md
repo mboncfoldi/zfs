@@ -1,10 +1,10 @@
 # Steps to install Kubuntu 22.04 destop on zfs
-#
-# no bpool or boot partition - only rpool +compression,encryption 
-# no grub - systemd-boot
-#
-# Start live iso --> terminal
-#
+
+no bpool or boot partition - only rpool +compression,encryption
+no grub - systemd-boot
+
+Start live iso --> terminal
+
 sudo -i
 
 add-apt-repository multiverse
