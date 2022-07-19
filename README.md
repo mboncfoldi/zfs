@@ -5,7 +5,7 @@ no grub - systemd-boot
 
 Start live iso --> terminal
 
-*sudo -i
+*sudo -i*
 
 *add-apt-repository multiverse
 apt update
