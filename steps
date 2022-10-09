@@ -1,28 +1,30 @@
 sudo -i
 
+add-apt-repository universe
 add-apt-repository multiverse
 apt update
 apt install debootstrap arch-install-scripts zfs-initramfs gdisk
 systemctl stop zed
 
-blkdiscard -f /dev/vda
-sgdisk --zap-all /dev/vda
-sgdisk -n1:1M:-1 -t1:EF00 -c1:EFI /dev/vda
-sgdisk --print /dev/vda
-sgdisk -n2:8388574:8388574 -t2:8300 -c2:key1 /dev/vda
-sgdisk --print /dev/vda
+blkdiscard -f /dev/sda
+sgdisk --zap-all /dev/sda
+sgdisk -n1:1M:-1 -t1:EF00 -c1:EFI /dev/sda
+sgdisk --print /dev/sda
+sgdisk -n2:8388574:8388574 -t2:8300 -c2:key1 /dev/sda
+sgdisk --print /dev/sda
 
-blkdiscard -f /dev/vdb
-sgdisk --zap-all /dev/vdb
-sgdisk -n1:1M:0 -t1:BF00 -c1:rpool /dev/vdb
-sgdisk --print /dev/vdb
+blkdiscard -f /dev/sdb
+sgdisk --zap-all /dev/sdb
+sgdisk -n1:1M:0 -t1:BF00 -c1:rpool /dev/sdb
+sgdisk --print /dev/sdb
 
 tr -d '\n' < /dev/urandom | dd of=/dev/disk/by-partlabel/key1
 
-zpool create -o ashift=12 -o autotrim=on -O acltype=posixacl -O dnodesize=auto -O normalization=formD -O atime=off -O xattr=sa -O compression=lz4 -O encryption=aes-256-gcm -O keyformat=passphrase -O keylocation=file:///dev/disk/by-partlabel/key1 -O canmount=off -O mountpoint=none -R /mnt/install rpool /dev/disk/by-partlabel/rpool
+zpool create -o ashift=12 -o autotrim=on -O acltype=posixacl -O dnodesize=auto -O normalization=formD -O atime=off -O xattr=sa -O canmount=off -O mountpoint=none -R /mnt/install rpool /dev/disk/by-partlabel/rpool
 
-zfs create -o canmount=noauto -o mountpoint=/ rpool/ROOT
-zfs mount rpool/ROOT
+zfs create -o compression=lz4 -o encryption=aes-256-gcm -o keyformat=passphrase -o keylocation=file:///dev/disk/by-partlabel/key1 -o canmount=noauto -o mountpoint=/ rpool/ubuntu-ROOT
+
+zfs mount rpool/ubuntu-ROOT
 zfs set devices=off rpool
 
 mkfs.vfat -F 32 -s 1 /dev/disk/by-partlabel/EFI
@@ -30,6 +32,7 @@ mkdir -p /mnt/install/boot/efi
 mount /dev/disk/by-partlabel/EFI /mnt/install/boot/efi/
 
 debootstrap jammy /mnt/install/
+
 sed '/cdrom/d' /etc/apt/sources.list > /mnt/install/etc/apt/sources.list
 cp /etc/netplan/*.yaml /mnt/install/etc/netplan/
 
@@ -39,15 +42,44 @@ nano /mnt/install/etc/fstab
 arch-chroot /mnt/install/
 
 apt update
+apt install nano
+
+nano /etc/apt/preferences.d/no-boot-loaders
+
+Package: grub*
+Pin: release *
+Pin-Priority: -1
+
+Package: grub*:i386
+Pin: release *
+Pin-Priority: -1
+
+Package: lilo
+Pin: release *
+Pin-Priority: -1
+
+Package: lilo:i386
+Pin: release *
+Pin-Priority: -1
+
+Package: os-prober
+Pin: release *
+Pin-Priority: -1
+
+Package: os-prober:i386
+Pin: release *
+Pin-Priority: -1
+
+
 apt install language-pack-en-base
 dpkg-reconfigure locales
 dpkg-reconfigure tzdata
 apt install --no-install-recommends linux-image-generic linux-headers-generic
-apt install efibootmgr zfs-initramfs nano bash-completion
-apt install kubuntu-desktop
+apt install efibootmgr zfs-initramfs nano bash-completion openssh-server
 
 adduser user0
-usermod -aG adm,cdrom,dip,lpadmin,plugdev,sudo user0
+# usermod -aG adm,cdrom,dip,lpadmin,plugdev,sudo user0
+adduser user0 sudo....
 
 mkdir -p /boot/efi/loader/entries
 nano /boot/efi/loader/loader.conf
@@ -71,7 +103,7 @@ nano /etc/kernel/postinst.d/zz-update-systemd-boot-zfs
 #ROOTTYPE="CHANGEME; ONLY AFFECTS OS DISPLAYNAME IN MENU E.G. zfs"
 #KERNELPARAMETERS="CHANGEME; Add extra options here e.g. quiet splash; leave empty if not using any options"
 
-ZFSROOT="rpool/ROOT"
+ZFSROOT="rpool/ubuntu-ROOT"
 UUID="3720602209614833149"
 OS="Ubuntu"
 OSV="Jammy"
@@ -147,32 +179,6 @@ bootctl --path=/boot/efi install
 efibootmgr -v
 
 update-initramfs -c -k all
-
-nano /etc/apt/preferences.d/no-boot-loaders
-
-Package: grub*
-Pin: release *
-Pin-Priority: -1
-
-Package: grub*:i386
-Pin: release *
-Pin-Priority: -1
-
-Package: lilo
-Pin: release *
-Pin-Priority: -1
-
-Package: lilo:i386
-Pin: release *
-Pin-Priority: -1
-
-Package: os-prober
-Pin: release *
-Pin-Priority: -1
-
-Package: os-prober:i386
-Pin: release *
-Pin-Priority: -1
 
 exit
 
